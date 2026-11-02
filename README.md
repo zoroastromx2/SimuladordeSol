@@ -25,9 +25,23 @@ npm run build
 - Drag to orbit the camera.
 - Scroll to change the viewing distance.
 - Select **Release probe** to drop the probe toward the photosphere.
-- At the thermal limit the descent stops. Select **Retrieve probe** to reset it to the safe spawn coordinate.
+- Above 98% thermal load, the probe undergoes shader-based disintegration with an explosive particle burst and status **Destroyed**; select **Deploy new probe** to relaunch.
+- Use the **Solar Observatory Stream** panel to switch real-time SDO satellite wavelengths (**Procedural**, **AIA 171 Å**, **AIA 304 Å**, **AIA 193 Å**, **HMI Magnetogram**).
+- Toggle **Corona Dinámica & Bucles [ON / OFF]** to dynamically enable or disable the 3D coronal loop arcades and volumetric eruptive flares, allowing immediate visual comparison between quiet solar emission and active storm states.
+- Scrub through historical archive observations across the past 24 hours using the **Timeline Scrubber Slider** or toggle the **Timelapse Play/Pause (▶ / ❚❚)** button to watch dynamic solar rotation and coronal flare evolutions in motion.
+- Monitor live solar flare intensity via the **Solar Flare Ticker** at the bottom of the SDO panel (tracking NOAA SWPC GOES-18 satellite X-ray flux). When an extreme **Class X flare** ($\ge 10^{-4}\text{ W/m}^2$) is detected, an emergency hazard warning banner with radiation storm alerts is displayed (includes a **SIMULAR CLASE X** toggle for immediate testing).
+- Expand the **Registro de Fulguraciones M & X** collapsible list to inspect logged timestamps, magnitudes, and peak flux values of every Class M and X flare detected during the observation session (with test injection controls and log clearing).
 
-The HUD reports the probe temperature and its physical distance from the photosphere in kilometres. The scene maps one world unit to one solar radius, or 696,340 km.
+## Real-Time SDO Data Integration
+
+`src/core/SDOFetcher.ts` fetches live satellite imagery from `https://sol24.net/sdo-images` via a graceful proxy pipeline:
+- **AIA 171 Å (17.1 nm Fe IX, 1.0 MK)**: Extreme ultraviolet coronal loop and quiescent corona emissions.
+- **AIA 304 Å (30.4 nm He II, 50,000 K)**: Chromospheric filaments, transition region dynamics, and limb prominences.
+- **AIA 193 Å (19.3 nm Fe XII, 1.2 MK)**: Coronal holes, solar wind streams, and flare active regions.
+- **HMI Magnetogram (617.3 nm)**: Photospheric magnetic field polarities, driving coronal loop arcade density and flare ignition sites.
+- **Procedural Mode**: Mathematical pure-simulation mode driven exclusively by simplex/Voronoi fractal Brownian motion.
+
+In `volumetric.frag`, real SDO pixel luminance and magnetic flux modulate the volumetric corona density, coronal loop placement, and active eruption sites on the fly.
 
 ## Approximations, stated plainly
 
@@ -74,11 +88,17 @@ Run `npm test` to execute all 15 cases.
 /src
   /components
     Annotation.tsx
+    FlareTicker.tsx
     Masthead.tsx
     Scale.tsx
+    SDOSelector.tsx
     SolarCanvas.tsx
     TelemetryPanel.tsx
   /core
+    ProbeExplosion.ts
+    SDOFetcher.ts
+    SolarAudioEngine.ts
+    SolarFlareMonitor.ts
     SunSimulator.ts
     TAACompositor.ts
   /math

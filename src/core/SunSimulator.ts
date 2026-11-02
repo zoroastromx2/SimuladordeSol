@@ -36,10 +36,18 @@ import {
   probeTemperatureAtPosition,
   probeThermalAppearance,
 } from '../math/SolarPhysics';
-import type { ProbeStatus, TelemetryData } from '../types';
+import type {
+  ProbeStatus,
+  SDOArchiveFrame,
+  SDOMode,
+  TelemetryData,
+} from '../types';
 import volumetricFragmentShader from '../shaders/volumetric.frag';
 import volumetricVertexShader from '../shaders/volumetric.vert';
 import { TAACompositor } from './TAACompositor';
+import { ProbeExplosion } from './ProbeExplosion';
+import { SDOFetcher } from './SDOFetcher';
+import { SolarAudioEngine } from './SolarAudioEngine';
 
 const mulberry32 = (seed: number) => {
   let state = seed >>> 0;
@@ -219,6 +227,9 @@ export class SunSimulator {
     dropping: boolean;
     stopped: boolean;
     speed: number;
+    disintegrating: boolean;
+    destroyed: boolean;
+    disintegrationProgress: number;
   };
   public scene: Scene;
   public camera: PerspectiveCamera;
@@ -235,6 +246,16 @@ export class SunSimulator {
   public probeRing!: Mesh;
   public probeGlow!: PointLight;
   public compositor: TAACompositor;
+  public explosion: ProbeExplosion;
+  public sdoFetcher: SDOFetcher;
+  public sdoMode: SDOMode = 'procedural';
+  public currentTimelineFrame: SDOArchiveFrame | null = null;
+  public dynamicCoronaEnabled: boolean = true;
+  public audioEngine: SolarAudioEngine;
+  public disintegrationUniforms: {
+    uDisintegration: { value: number };
+    uTime: { value: number };
+  };
   private currentStatus: ProbeStatus = 'Standby';
 
   constructor({ mount, onTelemetryChange }: SunSimulatorOptions) {
@@ -247,6 +268,17 @@ export class SunSimulator {
       dropping: false,
       stopped: false,
       speed: 0,
+      disintegrating: false,
+      destroyed: false,
+      disintegrationProgress: 0,
+    };
+
+    this.sdoFetcher = new SDOFetcher();
+    this.audioEngine = new SolarAudioEngine();
+
+    this.disintegrationUniforms = {
+      uDisintegration: { value: 0.0 },
+      uTime: { value: 0.0 },
     };
 
     this.scene = new Scene();
@@ -286,6 +318,8 @@ export class SunSimulator {
     this.blueNoise = createBlueNoiseTexture(this.blueNoiseSize);
     this.setupVolumetricSun();
     this.setupProbe();
+
+    this.explosion = new ProbeExplosion(this.scene);
 
     this.compositor = new TAACompositor(
       this.renderer,
@@ -331,6 +365,10 @@ export class SunSimulator {
         uFrameOffset: { value: new Vector2() },
         uTime: { value: 0 },
         uNoiseSize: { value: this.blueNoiseSize },
+        uSDOTexture: { value: this.sdoFetcher.getDefaultTexture() },
+        uSDOMode: { value: 0 },
+        uSDOBlend: { value: 0.0 },
+        uEnableDynamicCorona: { value: 1.0 },
       },
       vertexShader: volumetricVertexShader,
       fragmentShader: volumetricFragmentShader,
@@ -348,6 +386,68 @@ export class SunSimulator {
     this.scene.add(this.volumetricMesh);
   }
 
+  injectDisintegrationShader(material: MeshStandardMaterial): void {
+    material.customProgramCacheKey = () => 'disintegration';
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uDisintegration = this.disintegrationUniforms.uDisintegration;
+      shader.uniforms.uDisintegrationTime = this.disintegrationUniforms.uTime;
+
+      shader.vertexShader = `
+        varying vec3 vModelPosition;
+        ${shader.vertexShader}
+      `.replace(
+        '#include <begin_vertex>',
+        `
+        #include <begin_vertex>
+        vModelPosition = position;
+        `
+      );
+
+      shader.fragmentShader = `
+        uniform float uDisintegration;
+        uniform float uDisintegrationTime;
+        varying vec3 vModelPosition;
+
+        float disSampleNoise(vec3 p) {
+          vec3 i = floor(p);
+          vec3 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          float n = i.x + i.y * 57.0 + i.z * 113.0;
+          vec4 hash = fract(sin(vec4(n, n + 1.0, n + 57.0, n + 58.0)) * 43758.5453);
+          float a = mix(hash.x, hash.y, f.x);
+          float b = mix(hash.z, hash.w, f.x);
+          return mix(a, b, f.y);
+        }
+
+        float disFbm(vec3 p) {
+          float v = 0.5 * disSampleNoise(p);
+          v += 0.25 * disSampleNoise(p * 2.02);
+          v += 0.125 * disSampleNoise(p * 4.05);
+          return v;
+        }
+        ${shader.fragmentShader}
+      `.replace(
+        '#include <dithering_fragment>',
+        `
+        #include <dithering_fragment>
+        if (uDisintegration > 0.001) {
+          vec3 nCoord = vModelPosition * 14.0 + vec3(0.0, uDisintegrationTime * 1.5, 0.0);
+          float noise = disFbm(nCoord);
+          if (noise < uDisintegration) {
+            discard;
+          }
+          float edge = 0.12;
+          if (noise < uDisintegration + edge) {
+            float tEdge = 1.0 - (noise - uDisintegration) / edge;
+            vec3 emberColor = mix(vec3(1.0, 0.35, 0.02), vec3(1.0, 0.98, 0.85), tEdge);
+            gl_FragColor.rgb += emberColor * tEdge * 10.0;
+          }
+        }
+        `
+      );
+    };
+  }
+
   setupProbe(): void {
     this.probe = new Group();
     this.probeMaterial = new MeshStandardMaterial({
@@ -357,6 +457,8 @@ export class SunSimulator {
       emissive: 0x000000,
       emissiveIntensity: 0,
     });
+    this.injectDisintegrationShader(this.probeMaterial);
+
     this.probeCore = new Mesh(
       new IcosahedronGeometry(0.16, 3),
       this.probeMaterial,
@@ -367,6 +469,8 @@ export class SunSimulator {
       metalness: 0.9,
       roughness: 0.26,
     });
+    this.injectDisintegrationShader(this.probeTrimMaterial);
+
     this.probeRing = new Mesh(
       new TorusGeometry(0.29, 0.009, 8, 64),
       this.probeTrimMaterial,
@@ -385,9 +489,20 @@ export class SunSimulator {
       PROBE_SAFE_SPAWN_POSITION.y,
       PROBE_SAFE_SPAWN_POSITION.z,
     );
+    this.probe.rotation.set(0, 0, 0);
+    this.probeRing.rotation.set(Math.PI * 0.5, 0.38, 0);
+    this.probe.visible = true;
+
     this.probeState.dropping = false;
     this.probeState.stopped = false;
+    this.probeState.disintegrating = false;
+    this.probeState.destroyed = false;
+    this.probeState.disintegrationProgress = 0;
     this.probeState.speed = 0;
+
+    this.disintegrationUniforms.uDisintegration.value = 0.0;
+    this.explosion.reset();
+
     this.probeTemperature = probeTemperatureAtPosition(this.probe.position);
     this.updateProbeAppearance(this.probeTemperature);
     this.currentStatus = 'Standby';
@@ -395,12 +510,41 @@ export class SunSimulator {
   }
 
   releaseProbe(): void {
-    if (this.probeState.dropping || this.probeState.stopped) return;
+    if (
+      this.probeState.dropping ||
+      this.probeState.stopped ||
+      this.probeState.disintegrating ||
+      this.probeState.destroyed
+    ) {
+      return;
+    }
     this.probeState.dropping = true;
     this.probeState.stopped = false;
     this.probeState.speed = 0.3;
     this.currentStatus = 'Descending';
     this.notifyTelemetry();
+  }
+
+  triggerDisintegration(): void {
+    this.probeState.disintegrating = true;
+    this.probeState.disintegrationProgress = 0;
+    this.currentStatus = 'Disintegrating';
+
+    // Trigger particle explosion at the probe's position
+    this.explosion.trigger(this.probe.position);
+
+    // Trigger acoustic explosion synthesis
+    this.audioEngine.triggerExplosionSound();
+
+    // Initial blinding flash of light
+    this.probeGlow.intensity = 18.0;
+    this.notifyTelemetry();
+  }
+
+  toggleAudio(): boolean {
+    const isMuted = this.audioEngine.toggleMute();
+    this.notifyTelemetry();
+    return isMuted;
   }
 
   updateProbeAppearance(temperature: number): void {
@@ -410,6 +554,62 @@ export class SunSimulator {
     this.probeMaterial.emissiveIntensity = appearance.emissiveIntensity;
     this.probeGlow.color.setRGB(...appearance.emissiveColor);
     this.probeGlow.intensity = appearance.emissiveIntensity * 0.55;
+  }
+
+  async setSDOMode(mode: SDOMode): Promise<void> {
+    this.sdoMode = mode;
+    this.currentTimelineFrame = null;
+    const texture = await this.sdoFetcher.fetchTexture(mode);
+    this.volumetricMaterial.uniforms.uSDOTexture.value = texture;
+
+    const modeMap: Record<SDOMode, number> = {
+      procedural: 0,
+      aia171: 1,
+      aia304: 2,
+      aia193: 3,
+      hmib: 4,
+    };
+    this.volumetricMaterial.uniforms.uSDOMode.value = modeMap[mode];
+    this.volumetricMaterial.uniforms.uSDOBlend.value =
+      mode === 'procedural' ? 0.0 : 1.0;
+    this.notifyTelemetry();
+  }
+
+  async setSDOArchiveFrame(frame: SDOArchiveFrame): Promise<void> {
+    this.currentTimelineFrame = frame;
+
+    if (this.sdoMode === 'procedural' || !frame.url) {
+      this.volumetricMaterial.uniforms.uSDOMode.value = 0;
+      this.volumetricMaterial.uniforms.uSDOBlend.value = 0.0;
+      this.notifyTelemetry();
+      return;
+    }
+
+    const cacheKey = `${this.sdoMode}_${frame.id}`;
+    const texture = await this.sdoFetcher.fetchTextureByUrl(frame.url, cacheKey);
+    this.volumetricMaterial.uniforms.uSDOTexture.value = texture;
+
+    const modeMap: Record<SDOMode, number> = {
+      procedural: 0,
+      aia171: 1,
+      aia304: 2,
+      aia193: 3,
+      hmib: 4,
+    };
+    this.volumetricMaterial.uniforms.uSDOMode.value = modeMap[this.sdoMode];
+    this.volumetricMaterial.uniforms.uSDOBlend.value = 1.0;
+    this.notifyTelemetry();
+  }
+
+  setDynamicCorona(enabled: boolean): void {
+    this.dynamicCoronaEnabled = enabled;
+    this.volumetricMaterial.uniforms.uEnableDynamicCorona.value = enabled ? 1.0 : 0.0;
+    this.notifyTelemetry();
+  }
+
+  toggleDynamicCorona(): boolean {
+    this.setDynamicCorona(!this.dynamicCoronaEnabled);
+    return this.dynamicCoronaEnabled;
   }
 
   notifyTelemetry(): void {
@@ -425,14 +625,53 @@ export class SunSimulator {
     this.onTelemetryChange({
       temperature,
       distanceKm: Math.round(distanceKm),
-      heatPercentage: heat * 100,
+      heatPercentage: this.probeState.destroyed ? 100 : heat * 100,
       status: this.currentStatus,
       isDropping: this.probeState.dropping,
-      isStopped: this.probeState.stopped,
+      isStopped: this.probeState.stopped || this.probeState.destroyed,
+      sdoMode: this.sdoMode,
+      isAudioMuted: this.audioEngine.getIsMuted(),
+      timelineLabel: this.currentTimelineFrame
+        ? this.currentTimelineFrame.relativeLabel
+        : 'LIVE',
+      dynamicCoronaEnabled: this.dynamicCoronaEnabled,
     });
   }
 
   updateProbe(deltaTime: number): void {
+    this.disintegrationUniforms.uTime.value = this.elapsed;
+
+    if (this.probeState.disintegrating) {
+      // Advance disintegration effect
+      this.probeState.disintegrationProgress += deltaTime * 1.5;
+      this.disintegrationUniforms.uDisintegration.value = Math.min(
+        1.0,
+        this.probeState.disintegrationProgress,
+      );
+
+      // Probe tumbles and is consumed by fire
+      this.probe.rotation.y += deltaTime * 1.8;
+      this.probe.rotation.x += deltaTime * 1.2;
+      this.probeRing.rotation.z += deltaTime * 2.2;
+
+      if (this.probeState.disintegrationProgress >= 1.0) {
+        // Complete disintegration -> Destroyed
+        this.probeState.disintegrating = false;
+        this.probeState.destroyed = true;
+        this.probeState.dropping = false;
+        this.probeState.stopped = true;
+        this.probeState.speed = 0;
+        this.probe.visible = false;
+        this.currentStatus = 'Destroyed';
+        this.notifyTelemetry();
+      }
+      return;
+    }
+
+    if (this.probeState.destroyed) {
+      return;
+    }
+
     this.probe.rotation.y += deltaTime * 0.26;
     this.probeRing.rotation.z += deltaTime * 0.17;
 
@@ -451,6 +690,17 @@ export class SunSimulator {
     );
     this.probe.position.setLength(nextRadius);
 
+    this.probeTemperature = probeTemperatureAtPosition(this.probe.position);
+    this.updateProbeAppearance(this.probeTemperature);
+
+    const heat = Math.min(1, this.probeTemperature / PROBE_MELT_TEMPERATURE_K);
+
+    // Disintegration triggers when heat exceeds 98%
+    if (heat >= 0.98) {
+      this.triggerDisintegration();
+      return;
+    }
+
     if (nextRadius <= PROBE_MELT_RADIUS + 1e-6) {
       this.probeTemperature = PROBE_MELT_TEMPERATURE_K;
       this.probeState.dropping = false;
@@ -462,8 +712,6 @@ export class SunSimulator {
       return;
     }
 
-    this.probeTemperature = probeTemperatureAtPosition(this.probe.position);
-    this.updateProbeAppearance(this.probeTemperature);
     this.currentStatus = 'Descending';
     this.notifyTelemetry();
   }
@@ -489,6 +737,20 @@ export class SunSimulator {
     this.elapsed += deltaTime;
     this.controls.update();
     this.updateProbe(deltaTime);
+    this.explosion.update(deltaTime);
+
+    // Dynamic solar humming and spatialized thermal crackling
+    const probeDistRadii = this.probe.position.length();
+    const heatPercent = Math.min(
+      100,
+      (this.probeTemperature / PROBE_MELT_TEMPERATURE_K) * 100,
+    );
+    this.audioEngine.update(
+      this.probe.position,
+      this.camera.position,
+      heatPercent,
+      probeDistRadii,
+    );
 
     this.camera.updateMatrixWorld();
     this.camera.updateProjectionMatrix();
@@ -519,6 +781,9 @@ export class SunSimulator {
     window.removeEventListener('resize', this.handleResize);
     this.controls.dispose();
     this.compositor.dispose();
+    this.explosion.dispose();
+    this.sdoFetcher.dispose();
+    this.audioEngine.dispose();
     this.volumetricMaterial.dispose();
     this.volumetricMesh.geometry.dispose();
     this.probeCore.geometry.dispose();
