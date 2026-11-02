@@ -40,19 +40,19 @@ body::after {
 
 #root,
 .canvas-container,
-canvas {
+.canvas-container > canvas {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-canvas {
+.canvas-container > canvas {
   display: block;
   cursor: grab;
 }
 
-canvas:active {
+.canvas-container > canvas:active {
   cursor: grabbing;
 }
 
@@ -354,6 +354,99 @@ canvas:active {
   font-size: 8.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  gap: 8px;
+}
+
+.sdo-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.sdo-hide-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 205, 133, 0.18);
+  color: var(--muted);
+  font: inherit;
+  font-size: 6.5px;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 130ms ease;
+  white-space: nowrap;
+}
+
+.sdo-hide-btn:hover {
+  background: rgba(255, 179, 79, 0.15);
+  border-color: rgba(255, 179, 79, 0.4);
+  color: var(--ink);
+}
+
+.sdo-panel-minimized {
+  position: absolute;
+  top: 96px;
+  left: 30px;
+  pointer-events: auto;
+  z-index: 10;
+  animation: fadeInLog 180ms ease;
+}
+
+.sdo-toggle-restore-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background:
+    linear-gradient(135deg, rgba(255, 179, 79, 0.08), transparent 60%),
+    rgba(11, 10, 9, 0.88);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  color: var(--ink);
+  font: inherit;
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  padding: 6px 11px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.sdo-toggle-restore-btn:hover {
+  background: rgba(255, 179, 79, 0.18);
+  border-color: var(--amber);
+  color: #fff8e8;
+  box-shadow: 0 0 12px rgba(255, 179, 79, 0.35);
+}
+
+.sdo-restore-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sdo-restore-label {
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.sdo-restore-tag {
+  font-size: 6.5px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.sdo-restore-action {
+  font-size: 6.5px;
+  color: var(--amber);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin-left: 3px;
 }
 
 .sdo-live-indicator {
@@ -785,6 +878,685 @@ canvas:active {
   color: #ff9999;
 }
 
+/* Flare Navigation Tabs */
+.flare-nav-tabs {
+  display: flex;
+  gap: 3px;
+  margin: 6px 0 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 5px;
+}
+
+.flare-nav-tab {
+  flex: 1;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 205, 133, 0.12);
+  color: var(--muted);
+  font: inherit;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 130ms ease;
+  text-align: center;
+}
+
+.flare-nav-tab:hover {
+  background: rgba(255, 179, 79, 0.1);
+  color: var(--ink);
+  border-color: rgba(255, 179, 79, 0.3);
+}
+
+.flare-nav-tab.active {
+  background: rgba(255, 179, 79, 0.18);
+  border-color: var(--amber);
+  color: #fff8e8;
+  box-shadow: 0 0 6px rgba(255, 179, 79, 0.25);
+  font-weight: 500;
+}
+
+/* Flare Heatmap Container & Layout */
+.flare-heatmap-container {
+  margin-top: 4px;
+  padding: 4px 2px 2px;
+  animation: fadeInLog 180ms ease-out;
+}
+
+.flare-heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 7px;
+  gap: 6px;
+}
+
+.flare-heatmap-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.flare-heatmap-title {
+  font-size: 7.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.flare-heatmap-sub {
+  font-size: 6.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.flare-heatmap-quick-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.flare-heatmap-add-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 205, 133, 0.2);
+  color: var(--amber);
+  font: inherit;
+  font-size: 6.5px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.flare-heatmap-add-btn:hover {
+  background: rgba(255, 179, 79, 0.18);
+  color: #fff;
+}
+
+.flare-heatmap-add-btn.btn-x {
+  border-color: rgba(255, 50, 50, 0.4);
+  color: #ff6666;
+}
+
+.flare-heatmap-add-btn.btn-x:hover {
+  background: rgba(255, 50, 50, 0.25);
+  color: #fff;
+}
+
+.flare-heatmap-body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.flare-heatmap-visual {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flare-heatmap-canvas {
+  position: static;
+  inset: auto;
+  display: block;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  cursor: crosshair;
+}
+
+.flare-heatmap-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10, 8, 8, 0.95);
+  border: 1px solid rgba(255, 179, 79, 0.4);
+  border-radius: 2px;
+  padding: 3px 6px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  animation: fadeInLog 120ms ease;
+}
+
+.tooltip-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 6.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.tooltip-badge {
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-size: 6px;
+  font-weight: bold;
+}
+
+.tooltip-badge.badge-x {
+  background: #ff2222;
+  color: #fff;
+}
+
+.tooltip-badge.badge-m {
+  background: #ff7722;
+  color: #fff;
+}
+
+.tooltip-sub {
+  font-size: 6px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  margin-top: 1px;
+}
+
+.flare-heatmap-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heatmap-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 6.5px;
+}
+
+.heatmap-stat-row .stat-label {
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.heatmap-stat-row .stat-value {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.heatmap-stat-row .val-crit {
+  color: #ff3333;
+  font-weight: 600;
+}
+
+.heatmap-stat-row .val-warn {
+  color: #ff9933;
+  font-weight: 600;
+}
+
+/* Gradient Scale Bar */
+.heatmap-gradient-scale {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gradient-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 215, 0, 0.3) 0%,
+    rgba(255, 140, 20, 0.6) 35%,
+    rgba(255, 50, 20, 0.85) 70%,
+    #ff0055 90%,
+    #ffffff 100%
+  );
+  box-shadow: 0 0 4px rgba(255, 140, 20, 0.3);
+}
+
+.gradient-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 6px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* Flare 24H Activity Trend Chart */
+.flare-trend-container {
+  margin-top: 4px;
+  padding: 4px 2px 2px;
+  animation: fadeInLog 180ms ease-out;
+}
+
+.flare-trend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+  gap: 6px;
+}
+
+.flare-trend-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.flare-trend-title {
+  font-size: 7.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.flare-trend-sub {
+  font-size: 6.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.flare-trend-quick-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.flare-trend-add-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 205, 133, 0.2);
+  color: var(--amber);
+  font: inherit;
+  font-size: 6.5px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.flare-trend-add-btn:hover {
+  background: rgba(255, 179, 79, 0.18);
+  color: #fff;
+}
+
+.flare-trend-add-btn.btn-x {
+  border-color: rgba(255, 50, 50, 0.4);
+  color: #ff6666;
+}
+
+.flare-trend-add-btn.btn-x:hover {
+  background: rgba(255, 50, 50, 0.25);
+  color: #fff;
+}
+
+.flare-trend-metrics {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  padding: 4px 8px;
+}
+
+.trend-kpi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kpi-label {
+  font-size: 6px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kpi-val {
+  font-size: 7.5px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-val.val-amber {
+  color: var(--amber);
+}
+
+.kpi-val small {
+  font-size: 6.5px;
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.flare-trend-chart-box {
+  width: 100%;
+  height: 95px;
+  margin-top: 2px;
+  position: relative;
+}
+
+.flare-trend-loading {
+  height: 95px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  color: var(--muted);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+.flare-trend-tooltip {
+  background: rgba(12, 10, 10, 0.95);
+  border: 1px solid rgba(255, 179, 79, 0.4);
+  border-radius: 2px;
+  padding: 4px 7px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+  font-size: 6.5px;
+  line-height: 1.35;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.trend-tooltip-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 2px;
+  margin-bottom: 3px;
+}
+
+.trend-tooltip-title strong {
+  color: var(--amber);
+}
+
+.trend-tooltip-total {
+  color: #fff;
+  font-weight: 500;
+}
+
+.trend-tooltip-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 6px;
+}
+
+.tooltip-item-x {
+  color: #ff3333;
+  font-weight: 600;
+}
+
+.tooltip-item-m {
+  color: #ff9933;
+}
+
+.tooltip-item-c {
+  color: #ffd060;
+}
+
+.tooltip-item-b {
+  color: var(--muted);
+}
+
+.tooltip-item-peak {
+  color: #fff;
+  font-weight: 500;
+  border-top: 1px dotted rgba(255, 255, 255, 0.1);
+  padding-top: 2px;
+  margin-top: 1px;
+}
+
+.flare-trend-legend {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 5px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 6.5px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.legend-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+}
+
+.legend-dot.dot-b {
+  background: rgba(255, 179, 79, 0.65);
+}
+
+.legend-dot.dot-m {
+  background: #ff7722;
+}
+
+.legend-dot.dot-x {
+  background: #ff2222;
+  box-shadow: 0 0 4px rgba(255, 34, 34, 0.5);
+}
+
+/* Solar Soundscape Audio Generator */
+.solar-soundscape-container {
+  margin-top: 4px;
+  padding: 4px 2px 2px;
+  animation: fadeInLog 180ms ease-out;
+}
+
+.soundscape-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 7px;
+  gap: 6px;
+}
+
+.soundscape-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.soundscape-title {
+  font-size: 7.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.soundscape-sub {
+  font-size: 6.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.soundscape-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 205, 133, 0.2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 3px 7px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 130ms ease;
+  white-space: nowrap;
+}
+
+.soundscape-toggle-btn:hover {
+  background: rgba(255, 179, 79, 0.15);
+  color: var(--ink);
+  border-color: rgba(255, 179, 79, 0.4);
+}
+
+.soundscape-toggle-btn.active {
+  background: rgba(255, 179, 79, 0.22);
+  border-color: var(--amber);
+  color: #fff8e8;
+  box-shadow: 0 0 8px rgba(255, 179, 79, 0.35);
+}
+
+.soundscape-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #555;
+  transition: all 130ms ease;
+}
+
+.soundscape-toggle-btn.active .soundscape-dot {
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber);
+}
+
+.soundscape-visualizer-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 205, 133, 0.15);
+  border-radius: 2px;
+  padding: 4px 6px;
+  margin-bottom: 6px;
+}
+
+.soundscape-canvas {
+  position: static;
+  inset: auto;
+  width: 100%;
+  height: 28px;
+  display: block;
+  border-radius: 1px;
+}
+
+.soundscape-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  padding: 4px 6px;
+  margin-bottom: 6px;
+}
+
+.soundscape-meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 6.5px;
+}
+
+.soundscape-meta-item .meta-lbl {
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.soundscape-meta-item .meta-val {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.soundscape-meta-item .meta-val small {
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 6px;
+}
+
+.soundscape-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 5px;
+  gap: 8px;
+}
+
+.soundscape-audition-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.soundscape-audition-label {
+  font-size: 6px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  margin-right: 2px;
+}
+
+.soundscape-audition-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 205, 133, 0.18);
+  color: var(--amber);
+  font: inherit;
+  font-size: 6.5px;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.soundscape-audition-btn:hover {
+  background: rgba(255, 179, 79, 0.18);
+  color: #fff;
+}
+
+.soundscape-audition-btn.btn-m {
+  border-color: rgba(255, 120, 40, 0.35);
+  color: #ff8833;
+}
+
+.soundscape-audition-btn.btn-x {
+  border-color: rgba(255, 50, 50, 0.4);
+  color: #ff6666;
+}
+
+.soundscape-vol-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vol-label {
+  font-size: 6px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.soundscape-vol-slider {
+  width: 50px;
+  height: 3px;
+  accent-color: var(--amber);
+  cursor: pointer;
+}
+
+.vol-val {
+  font-size: 6.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  width: 22px;
+  text-align: right;
+}
+
 .flare-ticker-content {
   font-size: 7px;
   line-height: 1.35;
@@ -1078,7 +1850,207 @@ canvas:active {
   letter-spacing: 0.06em;
 }
 
+/* Edge-of-screen Flashing Flare Alert Overlay */
+.flare-edge-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 85;
+  box-shadow:
+    inset 0 0 55px rgba(255, 34, 34, 0.45),
+    inset 0 0 16px rgba(255, 70, 20, 0.65);
+  animation: flareEdgePulse 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes flareEdgePulse {
+  0% {
+    opacity: 0.25;
+    box-shadow:
+      inset 0 0 35px rgba(255, 34, 34, 0.3),
+      inset 0 0 10px rgba(255, 70, 20, 0.4);
+  }
+  100% {
+    opacity: 0.95;
+    box-shadow:
+      inset 0 0 75px rgba(255, 34, 34, 0.6),
+      inset 0 0 24px rgba(255, 70, 20, 0.85);
+  }
+}
+
+/* Corner hazard HUD brackets */
+.flare-corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: #ff3333;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.flare-corner-tl {
+  top: 14px;
+  left: 14px;
+  border-top: 2px solid #ff3333;
+  border-left: 2px solid #ff3333;
+}
+
+.flare-corner-tr {
+  top: 14px;
+  right: 14px;
+  border-top: 2px solid #ff3333;
+  border-right: 2px solid #ff3333;
+}
+
+.flare-corner-bl {
+  bottom: 14px;
+  left: 14px;
+  border-bottom: 2px solid #ff3333;
+  border-left: 2px solid #ff3333;
+}
+
+.flare-corner-br {
+  bottom: 14px;
+  right: 14px;
+  border-bottom: 2px solid #ff3333;
+  border-right: 2px solid #ff3333;
+}
+
+/* Top-edge notification banner pill */
+.flare-edge-banner {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(255, 34, 34, 0.22), rgba(20, 10, 10, 0.85)),
+    rgba(10, 8, 8, 0.9);
+  border: 1px solid #ff3333;
+  border-radius: 3px;
+  padding: 8px 14px 8px 12px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(255, 34, 34, 0.45);
+  backdrop-filter: blur(12px);
+  animation: bannerSlideDown 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+@keyframes bannerSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.flare-edge-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flare-edge-hazard-icon {
+  color: #ff3333;
+  font-size: 14px;
+  animation: blinkFast 1s infinite alternate;
+  flex-shrink: 0;
+}
+
+.flare-edge-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.flare-edge-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flare-edge-title {
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: #fff0f0;
+  text-transform: uppercase;
+}
+
+.flare-edge-mag-badge {
+  background: #ff2222;
+  color: #ffffff;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  box-shadow: 0 0 8px rgba(255, 34, 34, 0.6);
+}
+
+.flare-edge-subline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 7px;
+  color: #ffcccc;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
+.flare-edge-sep {
+  opacity: 0.5;
+}
+
+.flare-edge-radiation {
+  color: #ff8877;
+  font-weight: 500;
+}
+
+.flare-edge-dismiss-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffdcdc;
+  font: inherit;
+  font-size: 8.5px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 2px;
+  margin-left: 6px;
+  transition: all 120ms ease;
+  padding: 0;
+}
+
+.flare-edge-dismiss-btn:hover {
+  background: rgba(255, 50, 50, 0.4);
+  border-color: #ff3333;
+  color: #ffffff;
+}
+
 @media (max-width: 700px) {
+  .flare-edge-banner {
+    top: 14px;
+    width: calc(100vw - 36px);
+    padding: 7px 10px;
+  }
+
+  .flare-edge-title {
+    font-size: 7.5px;
+  }
+
+  .flare-edge-subline {
+    font-size: 6.5px;
+  }
+
   .masthead {
     top: 20px;
     left: 18px;
@@ -1090,6 +2062,11 @@ canvas:active {
     right: 18px;
     width: auto;
     padding: 10px 12px;
+  }
+
+  .sdo-panel-minimized {
+    top: 64px;
+    left: 18px;
   }
 
   .sdo-desc {

@@ -28,7 +28,6 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { halton2, halton3 } from '../math/Halton';
 import {
-  PROBE_MELT_RADIUS,
   PROBE_MELT_TEMPERATURE_K,
   PROBE_SAFE_SPAWN_POSITION,
   SUN_RADIUS_KM,
@@ -480,7 +479,7 @@ export class SunSimulator {
 
     this.probeGlow = new PointLight(0xff4218, 0, 1.8, 2);
     this.probe.add(this.probeCore, this.probeRing, this.probeGlow);
-    this.scene.add(this.probe);
+    this.probe.visible = false;
   }
 
   resetProbe(): void {
@@ -491,7 +490,7 @@ export class SunSimulator {
     );
     this.probe.rotation.set(0, 0, 0);
     this.probeRing.rotation.set(Math.PI * 0.5, 0.38, 0);
-    this.probe.visible = true;
+    this.probe.visible = false;
 
     this.probeState.dropping = false;
     this.probeState.stopped = false;
@@ -638,82 +637,10 @@ export class SunSimulator {
     });
   }
 
-  updateProbe(deltaTime: number): void {
-    this.disintegrationUniforms.uTime.value = this.elapsed;
-
-    if (this.probeState.disintegrating) {
-      // Advance disintegration effect
-      this.probeState.disintegrationProgress += deltaTime * 1.5;
-      this.disintegrationUniforms.uDisintegration.value = Math.min(
-        1.0,
-        this.probeState.disintegrationProgress,
-      );
-
-      // Probe tumbles and is consumed by fire
-      this.probe.rotation.y += deltaTime * 1.8;
-      this.probe.rotation.x += deltaTime * 1.2;
-      this.probeRing.rotation.z += deltaTime * 2.2;
-
-      if (this.probeState.disintegrationProgress >= 1.0) {
-        // Complete disintegration -> Destroyed
-        this.probeState.disintegrating = false;
-        this.probeState.destroyed = true;
-        this.probeState.dropping = false;
-        this.probeState.stopped = true;
-        this.probeState.speed = 0;
-        this.probe.visible = false;
-        this.currentStatus = 'Destroyed';
-        this.notifyTelemetry();
-      }
-      return;
+  updateProbe(_deltaTime: number): void {
+    if (this.probe) {
+      this.probe.visible = false;
     }
-
-    if (this.probeState.destroyed) {
-      return;
-    }
-
-    this.probe.rotation.y += deltaTime * 0.26;
-    this.probeRing.rotation.z += deltaTime * 0.17;
-
-    if (!this.probeState.dropping) {
-      return;
-    }
-
-    this.probeState.speed = Math.min(
-      1.2,
-      this.probeState.speed + deltaTime * 0.22,
-    );
-    const radius = this.probe.position.length();
-    const nextRadius = Math.max(
-      PROBE_MELT_RADIUS,
-      radius - this.probeState.speed * deltaTime,
-    );
-    this.probe.position.setLength(nextRadius);
-
-    this.probeTemperature = probeTemperatureAtPosition(this.probe.position);
-    this.updateProbeAppearance(this.probeTemperature);
-
-    const heat = Math.min(1, this.probeTemperature / PROBE_MELT_TEMPERATURE_K);
-
-    // Disintegration triggers when heat exceeds 98%
-    if (heat >= 0.98) {
-      this.triggerDisintegration();
-      return;
-    }
-
-    if (nextRadius <= PROBE_MELT_RADIUS + 1e-6) {
-      this.probeTemperature = PROBE_MELT_TEMPERATURE_K;
-      this.probeState.dropping = false;
-      this.probeState.stopped = true;
-      this.probeState.speed = 0;
-      this.updateProbeAppearance(this.probeTemperature);
-      this.currentStatus = 'Melt threshold';
-      this.notifyTelemetry();
-      return;
-    }
-
-    this.currentStatus = 'Descending';
-    this.notifyTelemetry();
   }
 
   handleResize(): void {

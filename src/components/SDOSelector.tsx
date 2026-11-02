@@ -9,6 +9,7 @@ interface SDOSelectorProps {
   onSelectMode: (mode: SDOMode) => void;
   onSelectFrame: (frame: SDOArchiveFrame) => void;
   onToggleDynamicCorona: () => void;
+  onClassXDetected?: (data: { magnitude: string; timestamp: string }) => void;
   sdoFetcher?: SDOFetcher;
 }
 
@@ -18,6 +19,7 @@ export const SDOSelector: React.FC<SDOSelectorProps> = ({
   onSelectMode,
   onSelectFrame,
   onToggleDynamicCorona,
+  onClassXDetected,
   sdoFetcher,
 }) => {
   const fetcherRef = useRef<SDOFetcher | null>(null);
@@ -29,6 +31,7 @@ export const SDOSelector: React.FC<SDOSelectorProps> = ({
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isPanelVisible, setIsPanelVisible] = useState<boolean>(true);
   const playTimerRef = useRef<number | null>(null);
 
   const activeInfo =
@@ -102,13 +105,18 @@ export const SDOSelector: React.FC<SDOSelectorProps> = ({
 
   const activeFrame = frames[currentIndex];
 
-  return (
-    <aside className="sdo-panel" aria-label="SDO Solar Observatory Mode and Timeline">
-      <div className="sdo-header">
-        <span>Solar Observatory Stream</span>
-        <span className="sdo-live-indicator">
-          <i
-            className="sdo-live-dot"
+  if (!isPanelVisible) {
+    return (
+      <aside className="sdo-panel-minimized" aria-label="SDO Solar Observatory Minimized">
+        <button
+          type="button"
+          className="sdo-toggle-restore-btn"
+          onClick={() => setIsPanelVisible(true)}
+          title="Mostrar panel del Observatorio Solar (SDO)"
+          aria-label="Mostrar panel SDO"
+        >
+          <span
+            className="sdo-restore-dot"
             style={{
               background:
                 currentMode === 'procedural'
@@ -124,12 +132,53 @@ export const SDOSelector: React.FC<SDOSelectorProps> = ({
                     : '0 0 6px #ffb15c',
             }}
           />
-          {currentMode === 'procedural'
-            ? 'PROCEDURAL'
-            : activeFrame?.isLive
-              ? 'LIVE SDO FEED'
-              : 'ARCHIVE PLAYBACK'}
-        </span>
+          <span className="sdo-restore-label">OBSERVATORIO SDO</span>
+          <span className="sdo-restore-tag">{currentMode.toUpperCase()}</span>
+          <span className="sdo-restore-action">MOSTRAR</span>
+        </button>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="sdo-panel" aria-label="SDO Solar Observatory Mode and Timeline">
+      <div className="sdo-header">
+        <div className="sdo-header-left">
+          <span>Solar Observatory Stream</span>
+          <span className="sdo-live-indicator">
+            <i
+              className="sdo-live-dot"
+              style={{
+                background:
+                  currentMode === 'procedural'
+                    ? 'var(--amber)'
+                    : activeFrame?.isLive
+                      ? '#39e58c'
+                      : '#ffb15c',
+                boxShadow:
+                  currentMode === 'procedural'
+                    ? '0 0 6px var(--amber)'
+                    : activeFrame?.isLive
+                      ? '0 0 6px #39e58c'
+                      : '0 0 6px #ffb15c',
+              }}
+            />
+            {currentMode === 'procedural'
+              ? 'PROCEDURAL'
+              : activeFrame?.isLive
+                ? 'LIVE SDO FEED'
+                : 'ARCHIVE PLAYBACK'}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="sdo-hide-btn"
+          onClick={() => setIsPanelVisible(false)}
+          title="Ocultar panel del Observatorio Solar"
+          aria-label="Ocultar panel SDO"
+        >
+          OCULTAR
+        </button>
       </div>
 
       {/* Wavelength Channel Tabs */}
@@ -300,7 +349,14 @@ export const SDOSelector: React.FC<SDOSelectorProps> = ({
       </div>
 
       {/* Real-time Solar Flare Ticker & Class X Warning */}
-      <FlareTicker />
+      <FlareTicker
+        onClassXDetected={(data) =>
+          onClassXDetected?.({
+            magnitude: data.currentClass,
+            timestamp: data.timeTag,
+          })
+        }
+      />
     </aside>
   );
 };

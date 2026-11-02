@@ -24,13 +24,16 @@ npm run build
 
 - Drag to orbit the camera.
 - Scroll to change the viewing distance.
-- Select **Release probe** to drop the probe toward the photosphere.
-- Above 98% thermal load, the probe undergoes shader-based disintegration with an explosive particle burst and status **Destroyed**; select **Deploy new probe** to relaunch.
 - Use the **Solar Observatory Stream** panel to switch real-time SDO satellite wavelengths (**Procedural**, **AIA 171 Å**, **AIA 304 Å**, **AIA 193 Å**, **HMI Magnetogram**).
+- Click **[OCULTAR]** on the top-right of the SDO panel header to minimize the panel for an unobstructed view of the Sun; click the minimized **[OBSERVATORIO SDO]** button to restore it anytime.
 - Toggle **Corona Dinámica & Bucles [ON / OFF]** to dynamically enable or disable the 3D coronal loop arcades and volumetric eruptive flares, allowing immediate visual comparison between quiet solar emission and active storm states.
 - Scrub through historical archive observations across the past 24 hours using the **Timeline Scrubber Slider** or toggle the **Timelapse Play/Pause (▶ / ❚❚)** button to watch dynamic solar rotation and coronal flare evolutions in motion.
 - Monitor live solar flare intensity via the **Solar Flare Ticker** at the bottom of the SDO panel (tracking NOAA SWPC GOES-18 satellite X-ray flux). When an extreme **Class X flare** ($\ge 10^{-4}\text{ W/m}^2$) is detected, an emergency hazard warning banner with radiation storm alerts is displayed (includes a **SIMULAR CLASE X** toggle for immediate testing).
 - Expand the **Registro de Fulguraciones M & X** collapsible list to inspect logged timestamps, magnitudes, and peak flux values of every Class M and X flare detected during the observation session (with test injection controls and log clearing).
+- Experience the edge-of-screen **Visual Flare Alert Overlay**, which triggers a subtle flashing perimeter radiation vignette and top-edge HUD warning pill whenever a high-magnitude solar flare (Class X) is detected in the SDO event stream.
+- Switch to the **Flare Heatmap** visualization in the SDO panel to inspect the spatial distribution, frequency, and cumulative thermal bloom of session flare events projected with an additive gradient overlay on a miniature orthographic solar disc (complete with interactive heliographic coordinate tooltips and active region tracking).
+- Analyze the 24-hour solar weather history via the **Tendencia 24H** chart powered by `recharts`, visualizing the hourly frequency, severity breakdown (Classes B, C, M, X), and peak flare magnitude for each hour across the past 24 hours.
+- Immerse in the **Solar Soundscape** audio generator, which synthesizes ethereal harmonic synth drone tones and celestial chimes directly mapped to real-time flare activity frequency, background X-ray flux, and radiation storm ionization, accompanied by an animated live audio spectrum visualizer.
 
 ## Real-Time SDO Data Integration
 
@@ -88,17 +91,21 @@ Run `npm test` to execute all 15 cases.
 /src
   /components
     Annotation.tsx
+    FlareAlertOverlay.tsx
+    FlareHeatmap.tsx
     FlareTicker.tsx
+    FlareTrendChart.tsx
     Masthead.tsx
     Scale.tsx
     SDOSelector.tsx
     SolarCanvas.tsx
-    TelemetryPanel.tsx
+    SolarSoundscape.tsx
   /core
     ProbeExplosion.ts
     SDOFetcher.ts
     SolarAudioEngine.ts
     SolarFlareMonitor.ts
+    SolarSoundscapeGenerator.ts
     SunSimulator.ts
     TAACompositor.ts
   /math

@@ -19,9 +19,16 @@ export interface FlareEvent {
   id: string;
   timestamp: string;
   magnitude: string;
-  severity: 'M' | 'X';
+  severity: 'A' | 'B' | 'C' | 'M' | 'X';
   flux: number;
   isSimulated?: boolean;
+  activeRegion?: string;
+  coords?: {
+    x: number; // normalized -1 to 1 on sun disc
+    y: number; // normalized -1 to 1 on sun disc
+    lat: number;
+    lon: number;
+  };
 }
 
 export interface TelemetryData {

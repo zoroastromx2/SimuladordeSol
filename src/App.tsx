@@ -1,10 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Masthead } from './components/Masthead';
-import { TelemetryPanel } from './components/TelemetryPanel';
 import { SDOSelector } from './components/SDOSelector';
 import { Annotation } from './components/Annotation';
 import { Scale } from './components/Scale';
 import { SolarCanvas } from './components/SolarCanvas';
+import { FlareAlertOverlay, type FlareAlertInfo } from './components/FlareAlertOverlay';
 import type { SunSimulator } from './core/SunSimulator';
 import type { SDOArchiveFrame, SDOMode, TelemetryData } from './types';
 
@@ -22,9 +22,10 @@ const INITIAL_TELEMETRY: TelemetryData = {
 };
 
 export const App: React.FC = () => {
-  const [telemetry, setTelemetryState] = useState<TelemetryData>(INITIAL_TELEMETRY);
+  const [, setTelemetryState] = useState<TelemetryData>(INITIAL_TELEMETRY);
   const [sdoMode, setSdoMode] = useState<SDOMode>('procedural');
   const [dynamicCoronaEnabled, setDynamicCoronaEnabled] = useState<boolean>(true);
+  const [flareAlert, setFlareAlert] = useState<FlareAlertInfo | null>(null);
   const simulatorRef = useRef<SunSimulator | null>(null);
 
   const handleTelemetryChange = useCallback((data: TelemetryData) => {
@@ -57,24 +58,20 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const handleToggleAudio = useCallback(() => {
-    if (simulatorRef.current) {
-      simulatorRef.current.toggleAudio();
-    }
-  }, []);
+  const handleClassXDetected = useCallback(
+    (data: { magnitude: string; timestamp: string }) => {
+      setFlareAlert({
+        magnitude: data.magnitude,
+        timestamp: data.timestamp,
+        id: `alert_${Date.now()}`,
+      });
+    },
+    [],
+  );
 
-  const handleAction = useCallback(() => {
-    if (!simulatorRef.current) return;
-    if (
-      telemetry.status === 'Destroyed' ||
-      telemetry.status === 'Melt threshold' ||
-      telemetry.isStopped
-    ) {
-      simulatorRef.current.resetProbe();
-    } else if (!telemetry.isDropping && telemetry.status !== 'Disintegrating') {
-      simulatorRef.current.releaseProbe();
-    }
-  }, [telemetry.status, telemetry.isStopped, telemetry.isDropping]);
+  const handleDismissAlert = useCallback(() => {
+    setFlareAlert(null);
+  }, []);
 
   return (
     <>
@@ -90,16 +87,18 @@ export const App: React.FC = () => {
           onSelectMode={handleSelectSDOMode}
           onSelectFrame={handleSelectFrame}
           onToggleDynamicCorona={handleToggleDynamicCorona}
+          onClassXDetected={handleClassXDetected}
           sdoFetcher={simulatorRef.current?.sdoFetcher}
-        />
-        <TelemetryPanel
-          telemetry={telemetry}
-          onAction={handleAction}
-          onToggleAudio={handleToggleAudio}
         />
         <Annotation />
         <Scale />
       </div>
+
+      {/* Visual flare alert overlay for Class X events */}
+      <FlareAlertOverlay
+        alert={flareAlert}
+        onDismiss={handleDismissAlert}
+      />
     </>
   );
 };

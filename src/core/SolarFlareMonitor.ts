@@ -16,6 +16,24 @@ export interface SolarFlareData {
 export type FlareListener = (data: SolarFlareData) => void;
 export type EventLogListener = (events: FlareEvent[]) => void;
 
+const ACTIVE_REGIONS = [
+  { name: 'AR 3878', lat: 18, lon: 14 },
+  { name: 'AR 3880', lat: -14, lon: -26 },
+  { name: 'AR 3882', lat: 24, lon: -12 },
+  { name: 'AR 3884', lat: -22, lon: 40 },
+  { name: 'AR 3886', lat: 11, lon: 52 },
+  { name: 'AR 3889', lat: -16, lon: -50 },
+];
+
+function heliographicToDisc(latDeg: number, lonDeg: number): { x: number; y: number } {
+  const latRad = (latDeg * Math.PI) / 180;
+  const lonRad = (lonDeg * Math.PI) / 180;
+  return {
+    x: Math.cos(latRad) * Math.sin(lonRad),
+    y: -Math.sin(latRad),
+  };
+}
+
 export class SolarFlareMonitor {
   private currentData: SolarFlareData;
   private listeners: Set<FlareListener> = new Set();
@@ -141,6 +159,17 @@ export class SolarFlareMonitor {
 
     if (isDuplicate) return;
 
+    // Assign active region & solar heliographic coordinates
+    const hash = Math.abs(
+      magnitude.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0),
+    );
+    const region = ACTIVE_REGIONS[hash % ACTIVE_REGIONS.length];
+    const jitterLat = (Math.random() - 0.5) * 4;
+    const jitterLon = (Math.random() - 0.5) * 4;
+    const finalLat = Math.max(-45, Math.min(45, region.lat + jitterLat));
+    const finalLon = Math.max(-75, Math.min(75, region.lon + jitterLon));
+    const { x, y } = heliographicToDisc(finalLat, finalLon);
+
     const newEvent: FlareEvent = {
       id: `flare_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: timeTag,
@@ -148,6 +177,8 @@ export class SolarFlareMonitor {
       severity,
       flux,
       isSimulated,
+      activeRegion: region.name,
+      coords: { x, y, lat: finalLat, lon: finalLon },
     };
 
     // Prepend so the newest flare is at top
