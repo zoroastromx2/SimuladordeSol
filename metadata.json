@@ -1,0 +1,6 @@
+{
+  "name": "Helios Probe - Volumetric Solar Simulator",
+  "description": "A real-time volumetric solar simulator with an interactive thermal probe and temporal anti-aliasing.",
+  "permissions": [],
+  "capabilities": []
+}
