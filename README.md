@@ -34,6 +34,7 @@ npm run build
 - Switch to the **Flare Heatmap** visualization in the SDO panel to inspect the spatial distribution, frequency, and cumulative thermal bloom of session flare events projected with an additive gradient overlay on a miniature orthographic solar disc (complete with interactive heliographic coordinate tooltips and active region tracking).
 - Analyze the 24-hour solar weather history via the **Tendencia 24H** chart powered by `recharts`, visualizing the hourly frequency, severity breakdown (Classes B, C, M, X), and peak flare magnitude for each hour across the past 24 hours.
 - Immerse in the **Solar Soundscape** audio generator, which synthesizes ethereal harmonic synth drone tones and celestial chimes directly mapped to real-time flare activity frequency, background X-ray flux, and radiation storm ionization, accompanied by an animated live audio spectrum visualizer.
+- Monitor global space weather conditions with the **Space Weather Status** HUD badge (powered by `useSpaceWeather`), which periodically polls NOAA SWPC satellites (GOES and DSCOVR) for active R, S, and G scales and official space weather alerts; clicking the badge opens an interactive telemetry modal with full scale breakdowns, active notices, and geomagnetic storm simulation controls.
 
 ## Real-Time SDO Data Integration
 
@@ -100,6 +101,7 @@ Run `npm test` to execute all 15 cases.
     SDOSelector.tsx
     SolarCanvas.tsx
     SolarSoundscape.tsx
+    SpaceWeatherBadge.tsx
   /core
     ProbeExplosion.ts
     SDOFetcher.ts
@@ -108,6 +110,8 @@ Run `npm test` to execute all 15 cases.
     SolarSoundscapeGenerator.ts
     SunSimulator.ts
     TAACompositor.ts
+  /hooks
+    useSpaceWeather.ts
   /math
     Halton.ts
     SolarPhysics.ts

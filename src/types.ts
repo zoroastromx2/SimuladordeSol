@@ -49,3 +49,40 @@ export interface ProbeThermalAppearance {
   emissiveColor: [number, number, number];
   emissiveIntensity: number;
 }
+
+export interface SpaceWeatherScaleItem {
+  scale: number;
+  text: string;
+  minorProb?: string | null;
+  majorProb?: string | null;
+  prob?: string | null;
+}
+
+export interface SpaceWeatherScales {
+  R: SpaceWeatherScaleItem;
+  S: SpaceWeatherScaleItem;
+  G: SpaceWeatherScaleItem;
+  timeStamp: string;
+  dateStamp: string;
+}
+
+export interface SpaceWeatherAlert {
+  id: string;
+  productId: string;
+  issueTime: string;
+  message: string;
+  headline: string;
+  severity: 'normal' | 'watch' | 'warning' | 'alert';
+}
+
+export type SpaceWeatherStatusLevel = 'QUIET' | 'ACTIVE' | 'WARNING' | 'EXTREME';
+
+export interface SpaceWeatherState {
+  scales: SpaceWeatherScales;
+  alerts: SpaceWeatherAlert[];
+  overallStatus: SpaceWeatherStatusLevel;
+  activeAlertCount: number;
+  lastUpdated: string;
+  isLoading: boolean;
+  error: string | null;
+}

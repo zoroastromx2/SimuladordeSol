@@ -14,6 +14,8 @@ uniform sampler2D uSDOTexture;
 uniform int uSDOMode; // 0 = procedural, 1 = aia171, 2 = aia304, 3 = aia193, 4 = hmib
 uniform float uSDOBlend; // 0.0 (procedural) to 1.0 (full SDO telemetry)
 uniform float uEnableDynamicCorona; // 1.0 = active dynamic corona, 0.0 = inactive/quiescent
+uniform int uMaxSteps; // Scaled raymarch steps (e.g. 64 for desktop ultra, 32 for mobile performance)
+uniform float uPerformanceMode; // 1.0 = mobile / performance mode, 0.0 = ultra fidelity
 
 varying vec2 vUv;
 
@@ -355,7 +357,7 @@ void sampleVolumetricFlares(
       float coreRope = exp(-pow(radF / (coneRadius * 0.55), 2.0));
       float bubble = exp(-pow(blastDistH / (0.16 + 0.25 * eruptionProgress), 2.0)) *
         smoothstep(coneRadius * 1.3, coneRadius * 0.1, radF);
-      float filamentTear = 1.0 - smoothstep(0.01, 0.18, voronoiEdge(turbPos * 2.0));
+      float filamentTear = uPerformanceMode > 0.5 ? 0.0 : (1.0 - smoothstep(0.01, 0.18, voronoiEdge(turbPos * 2.0)));
 
       plume = (coreRope * 0.7 + bubble * 1.4) * (0.4 + 0.6 * turb + 0.5 * filamentTear);
       plume *= (1.0 - eruptionProgress * 0.45);
@@ -528,14 +530,15 @@ void main() {
     uFrameOffset.y * 0.38196601125
   );
 
-  float stepSize = (endT - startT) / float(MAX_STEPS);
+  int maxSteps = uMaxSteps > 0 ? uMaxSteps : 64;
+  float stepSize = (endT - startT) / float(maxSteps);
   float t = startT + stepSize * temporalOffset;
   float transmittance = 1.0;
   vec3 scattered = vec3(0.0);
   vec3 flow = vec3(0.0, uTime * 0.055, uTime * 0.022);
 
-  for (int stepIndex = 0; stepIndex < MAX_STEPS; stepIndex++) {
-    if (t >= endT) {
+  for (int stepIndex = 0; stepIndex < 64; stepIndex++) {
+    if (stepIndex >= maxSteps || t >= endT) {
       break;
     }
 
@@ -544,7 +547,8 @@ void main() {
     float altitude = max(radius - SUN_RADIUS, 0.0);
 
     // 1. Ambient corona turbulence & radial streamers
-    int octaves = altitude < 0.28 ? 5 : (altitude < 0.9 ? 3 : 2);
+    int maxOct = uPerformanceMode > 0.5 ? 3 : 5;
+    int octaves = altitude < 0.28 ? maxOct : (altitude < 0.9 ? min(3, maxOct) : (uPerformanceMode > 0.5 ? 1 : 2));
     float turbulence = 0.5 + 0.5 * fbm(position * 2.15 + flow, octaves);
     float outerFade = 1.0 - smoothstep(
       CORONA_RADIUS - 1.15,

@@ -13,6 +13,17 @@ export const FlareHeatmap: React.FC<FlareHeatmapProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hoveredEvent, setHoveredEvent] = useState<FlareEvent | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
+  const pendingEventRef = useRef<FlareEvent | null>(null);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current !== null) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Compute session metrics
   const metrics = useMemo(() => {
@@ -171,14 +182,13 @@ export const FlareHeatmap: React.FC<FlareHeatmapProps> = ({
 
   }, [events]);
 
-  // Handle canvas mouse move to detect hovered flare hotspots
+  // Handle canvas mouse move to detect hovered flare hotspots with 300ms delay
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    setMousePos({ x, y });
 
     const cx = 55;
     const cy = 55;
@@ -198,10 +208,49 @@ export const FlareHeatmap: React.FC<FlareHeatmapProps> = ({
       }
     }
 
-    setHoveredEvent(closest);
+    // No flare hotspot under cursor
+    if (!closest) {
+      if (hoverTimeoutRef.current !== null) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      pendingEventRef.current = null;
+      setHoveredEvent(null);
+      setMousePos(null);
+      return;
+    }
+
+    // If this hotspot is already displayed, smoothly track cursor without re-delaying
+    if (hoveredEvent && hoveredEvent.id === closest.id) {
+      setMousePos({ x, y });
+      return;
+    }
+
+    // If timer is already counting down for this exact event, don't restart timer
+    if (pendingEventRef.current && pendingEventRef.current.id === closest.id) {
+      return;
+    }
+
+    // Reset countdown for newly detected candidate hotspot (300ms delay)
+    if (hoverTimeoutRef.current !== null) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    pendingEventRef.current = closest;
+
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setHoveredEvent(closest);
+      setMousePos({ x, y });
+      hoverTimeoutRef.current = null;
+      pendingEventRef.current = null;
+    }, 300);
   };
 
   const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current !== null) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    pendingEventRef.current = null;
     setHoveredEvent(null);
     setMousePos(null);
   };

@@ -5,6 +5,8 @@ import { Annotation } from './components/Annotation';
 import { Scale } from './components/Scale';
 import { SolarCanvas } from './components/SolarCanvas';
 import { FlareAlertOverlay, type FlareAlertInfo } from './components/FlareAlertOverlay';
+import { SpaceWeatherBadge } from './components/SpaceWeatherBadge';
+import { useSpaceWeather } from './hooks/useSpaceWeather';
 import type { SunSimulator } from './core/SunSimulator';
 import type { SDOArchiveFrame, SDOMode, TelemetryData } from './types';
 
@@ -27,6 +29,9 @@ export const App: React.FC = () => {
   const [dynamicCoronaEnabled, setDynamicCoronaEnabled] = useState<boolean>(true);
   const [flareAlert, setFlareAlert] = useState<FlareAlertInfo | null>(null);
   const simulatorRef = useRef<SunSimulator | null>(null);
+
+  // Hook periodically polling NOAA SWPC for current space weather scales & alerts
+  const spaceWeather = useSpaceWeather(45000);
 
   const handleTelemetryChange = useCallback((data: TelemetryData) => {
     setTelemetryState(data);
@@ -80,7 +85,10 @@ export const App: React.FC = () => {
         simulatorRef={simulatorRef}
       />
       <div className="hud">
-        <Masthead />
+        <header className="hud-top-row">
+          <Masthead />
+          <SpaceWeatherBadge weather={spaceWeather} />
+        </header>
         <SDOSelector
           currentMode={sdoMode}
           dynamicCoronaEnabled={dynamicCoronaEnabled}
